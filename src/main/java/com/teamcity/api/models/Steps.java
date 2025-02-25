@@ -5,11 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Builder
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class User extends BaseModel {
-    private String user;
-    private String password;
+public class Steps {
+    private int count;
+    private List<Step> step;
+
 }
