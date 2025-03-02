@@ -1,7 +1,6 @@
 package com.teamcity.api.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.teamcity.api.annotations.Random;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,10 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Project extends BaseModel {
-    @Random
-    private String id;
-    @Random
-    private String name;
-    private String locator;
+public class Role extends BaseModel {
+    @Builder.Default
+    private String roleId = "SYSTEM_ADMIN";
+    @Builder.Default
+    private String scope = "g";
 }
