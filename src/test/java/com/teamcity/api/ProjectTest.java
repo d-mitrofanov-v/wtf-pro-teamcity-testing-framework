@@ -1,13 +1,10 @@
 package com.teamcity.api;
 
-import com.teamcity.api.models.Locator;
-import com.teamcity.api.models.Project;
-import com.teamcity.api.models.Role;
-import com.teamcity.api.models.Roles;
+import com.teamcity.api.models.*;
 import com.teamcity.api.requests.CheckedRequests;
 import com.teamcity.api.requests.UncheckedRequests;
-import com.teamcity.api.spec.Specifications;
-import org.apache.http.HttpStatus;
+import com.teamcity.api.spec.Specs;
+import com.teamcity.api.spec.ValidationResponseSpecs;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -18,6 +15,15 @@ import static com.teamcity.api.generators.TestDataGenerator.generate;
 
 @Test(groups = {"Regression"})
 public class ProjectTest extends BaseApiTest {
+    private UncheckedRequests getUserUncheckedRequests(User user) {
+        superUserCheckedRequests.getRequest(USERS).create(user);
+        return new UncheckedRequests(Specs.authSpec(user));
+    }
+
+    private CheckedRequests getUserCheckedRequests(User user) {
+        superUserCheckedRequests.getRequest(USERS).create(user);
+        return new CheckedRequests(Specs.authSpec(user));
+    }
 
     @Test(description = "Project can be created by Super user", groups = {"Positive", "CRUD"})
     public void superUserCreatesProject() {
@@ -29,130 +35,178 @@ public class ProjectTest extends BaseApiTest {
 
     @Test(description = "Project can be created by user", groups = {"Positive", "CRUD"})
     public void userCreatesProject() {
-        var user = testData.getUser();
-        superUserCheckedRequests.getRequest(USERS).create(user);
-        var userCheckedRequests = new CheckedRequests(Specifications.authSpec(user));
+        var userCheckedRequests = getUserCheckedRequests(testData.getUser());
 
         var project = testData.getProject();
         var createdProject = userCheckedRequests.<Project>getRequest(PROJECTS).create(project);
 
-        softy.assertEquals(project.getName(), createdProject.getName(), "Project name is not correct");
-        softy.assertEquals(project.getId(), createdProject.getId(), "Project id is not correct");
+        softy.assertEquals(project, createdProject, "Created project doesn't match test project");
     }
 
     @Test(description = "Project with 'copyAllAssociatedSettings' = false can be created by user", groups = {"Positive", "CRUD"})
     public void userCreatesProjectWithCopyAllAssociatedSettingsFalse() {
-        var user = testData.getUser();
-        superUserCheckedRequests.getRequest(USERS).create(user);
-        var userCheckedRequests = new CheckedRequests(Specifications.authSpec(user));
+        var userCheckedRequests = getUserCheckedRequests(testData.getUser());
 
         var project = generate(Project.class);
         project.setCopyAllAssociatedSettings(false);
         var createdProject = userCheckedRequests.<Project>getRequest(PROJECTS).create(project);
+        project.setCopyAllAssociatedSettings(true);
 
-        softy.assertEquals(project.getName(), createdProject.getName(), "Project name is not correct");
-        softy.assertEquals(project.getId(), createdProject.getId(), "Project id is not correct");
-    }
-
-    @Test(description = "Project with empty name can not be created by user", groups = {"Negative", "CRUD"})
-    public void userCreatesProjectWithEmptyName() {
-        var user = testData.getUser();
-        superUserCheckedRequests.getRequest(USERS).create(user);
-        var userCheckedRequests = new UncheckedRequests(Specifications.authSpec(user));
-
-        var project = testData.getProject();
-        project.setName("");
-
-        var response = userCheckedRequests.getRequest(PROJECTS).create(project);
-
-        softy.assertEquals(response.statusCode(), HttpStatus.SC_BAD_REQUEST);
-        softy.assertTrue(response.body().asString().contains("Project name cannot be empty"));
+        softy.assertEquals(project, createdProject, "Created project doesn't match test project");
     }
 
     @Test(description = "Project can not be created with already used id", groups = {"Negative", "CRUD"})
     public void userCreatesProjectWithSameId() {
         var user = testData.getUser();
         superUserCheckedRequests.getRequest(USERS).create(user);
-        var userCheckedRequests = new CheckedRequests(Specifications.authSpec(user));
-        var userUncheckedRequests = new UncheckedRequests(Specifications.authSpec(user));
+        var userCheckedRequests = new CheckedRequests(Specs.authSpec(user));
+        var userUncheckedRequests = new UncheckedRequests(Specs.authSpec(user));
 
         var project = testData.getProject();
         var projectWithSameId = generate(Arrays.asList(project), Project.class, project.getId());
 
         userCheckedRequests.<Project>getRequest(PROJECTS).create(project);
-        var response = userUncheckedRequests.getRequest(PROJECTS).create(projectWithSameId);
 
-        softy.assertEquals(response.statusCode(), HttpStatus.SC_BAD_REQUEST);
-        softy.assertTrue(response.body().asString().contains("Project ID \"%s\" is already used by another project".formatted(project.getId())));
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(projectWithSameId)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectWithIdAlreadyExist(project.getId()));
     }
 
     @Test(description = "Project can not be created with already used name", groups = {"Negative", "CRUD"})
     public void userCreatesProjectWithSameName() {
         var user = testData.getUser();
         superUserCheckedRequests.getRequest(USERS).create(user);
-        var userCheckedRequests = new CheckedRequests(Specifications.authSpec(user));
-        var userUncheckedRequests = new UncheckedRequests(Specifications.authSpec(user));
+        var userCheckedRequests = new CheckedRequests(Specs.authSpec(user));
+        var userUncheckedRequests = new UncheckedRequests(Specs.authSpec(user));
 
         var project = testData.getProject();
         var projectWithSameName = generate(Project.class);
         projectWithSameName.setName(project.getName());
 
         userCheckedRequests.<Project>getRequest(PROJECTS).create(project);
-        var response = userUncheckedRequests.getRequest(PROJECTS).create(projectWithSameName);
 
-        softy.assertEquals(response.statusCode(), HttpStatus.SC_BAD_REQUEST);
-        softy.assertTrue(response.body().asString().contains("Project with this name already exists: %s".formatted(project.getName())));
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(projectWithSameName)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectWithNameAlreadyExist(project.getName()));
     }
+
+    @Test(description = "Project with empty id can not be created by user", groups = {"Negative", "CRUD"})
+    public void userCreatesProjectWithEmptyId() {
+        var userUncheckedRequests = getUserUncheckedRequests(testData.getUser());
+
+        var project = testData.getProject();
+        project.setId("");
+
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(project)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectNameId());
+    }
+
+    @Test(description = "Project with empty name can not be created by user", groups = {"Negative", "CRUD"})
+    public void userCreatesProjectWithEmptyName() {
+        var userUncheckedRequests = getUserUncheckedRequests(testData.getUser());
+
+        var project = testData.getProject();
+        project.setName("");
+
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(project)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectNameEmpty());
+    }
+
+    @Test(description = "Project with empty name and empty id can not be created by user", groups = {"Negative", "CRUD"})
+    public void userCreatesProjectWithEmptyNameAndEmptyId() {
+        var userUncheckedRequests = getUserUncheckedRequests(testData.getUser());
+
+        var project = testData.getProject();
+        project.setId("");
+        project.setName("");
+
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(project)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectNameEmpty());
+    }
+
+    @Test(description = "Project with empty name and invalid id can not be created by user", groups = {"Negative", "CRUD"})
+    public void userCreatesProjectWithEmptyNameAndInvalidId() {
+        var userUncheckedRequests = getUserUncheckedRequests(testData.getUser());
+
+        String invalidProjectId = "Бип-буп";
+        var project = testData.getProject();
+        project.setId(invalidProjectId);
+        project.setName("");
+
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(project)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectNameEmpty());
+    }
+
+    @Test(description = "Project can not be created with underscore in the beginning of id", groups = {"Negative", "CRUD"})
+    public void userCreatesProjectWithUnderscoredId() {
+        var userUncheckedRequests = getUserUncheckedRequests(testData.getUser());
+
+        String invalidProjectId = "_ProjectID";
+        var projectWithInvalidId = generate(Project.class);
+        projectWithInvalidId.setId(invalidProjectId);
+
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(projectWithInvalidId)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectIdUndersore(invalidProjectId));
+    }
+
 
     @Test(description = "Project can not be created with non-latin id", groups = {"Negative", "CRUD"})
     public void userCreatesProjectWithNonLatin() {
-        var user = testData.getUser();
-        superUserCheckedRequests.getRequest(USERS).create(user);
-        var userUncheckedRequests = new UncheckedRequests(Specifications.authSpec(user));
+        var userUncheckedRequests = getUserUncheckedRequests(testData.getUser());
 
         String invalidProjectId = "СашаЛучшийПреподавательВМире";
         var projectWithInvalidId = generate(Project.class);
         projectWithInvalidId.setId(invalidProjectId);
 
-        var response = userUncheckedRequests.getRequest(PROJECTS).create(projectWithInvalidId);
-        // Ужас 500ка :(
-        softy.assertEquals(response.statusCode(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        softy.assertTrue(response.body().asString().contains("Project ID \"%s\" is invalid: contains non-latin letter 'С'. ID should start with a latin letter and contain only latin letters, digits and underscores (at most 225 characters)".formatted(invalidProjectId)));
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(projectWithInvalidId)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectIdInvalid(invalidProjectId));
     }
 
-    @Test(description = "Project can not be created with id bigger then 225 symbols", groups = {"Negative", "CRUD"})
+    @Test(description = "Project can not be created with id bigger then 225 symbols", groups = {"Negative", "CRUD"}
+    )
     public void userCreatesProjectWithLongId() {
-        var user = testData.getUser();
-        superUserCheckedRequests.getRequest(USERS).create(user);
-        var userUncheckedRequests = new UncheckedRequests(Specifications.authSpec(user));
+        var userUncheckedRequests = getUserUncheckedRequests(testData.getUser());
 
         String invalidProjectId = "BeepBoop".repeat(30);
         var projectWithInvalidId = generate(Project.class);
         projectWithInvalidId.setId(invalidProjectId);
 
-        var response = userUncheckedRequests.getRequest(PROJECTS).create(projectWithInvalidId);
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(projectWithInvalidId)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectNameLong(invalidProjectId));
 
-        softy.assertEquals(response.statusCode(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        softy.assertTrue(response.body().asString().contains("Project ID \"%s\" is invalid: it is 240 characters long while the maximum length is 225. ID should start with a latin letter and contain only latin letters, digits and underscores (at most 225 characters).".formatted(invalidProjectId)));
     }
 
     @Test(description = "Project can not be copies from non existing project", groups = {"Negative", "Copy"})
     public void userCopiesProjectWithNonExistentLocator() {
-        var user = testData.getUser();
-        superUserCheckedRequests.getRequest(USERS).create(user);
-        var userUncheckedRequests = new UncheckedRequests(Specifications.authSpec(user));
+        var userUncheckedRequests = getUserUncheckedRequests(testData.getUser());
 
         Locator nonExistingLocator = new Locator("nonExisting");
         var projectWithNonExistingLocator = generate(Project.class);
         projectWithNonExistingLocator.setParentProject(nonExistingLocator);
 
-        var response = userUncheckedRequests.getRequest(PROJECTS).create(projectWithNonExistingLocator);
-
-        softy.assertEquals(response.statusCode(), HttpStatus.SC_NOT_FOUND);
-        softy.assertTrue(response.body().asString().contains("No project found by name or internal/external id '%s'.".formatted(nonExistingLocator.getLocator())));
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(projectWithNonExistingLocator)
+                .then()
+                .spec(ValidationResponseSpecs.checkProjectNotFound(nonExistingLocator.getLocator()));
     }
 
-    @Test(description = "Project can not be created by user with certain roles", groups = {"Roles", "Negative", "CRUD"})
+    @Test(description = "Project can not be created by user with certain roles", groups = {"Negative", "Roles"})
     public void nonAdminUserCreatesProject() {
         var roleViewer = Role.builder().roleId("PROJECT_VIEWER").scope("g").build();
         var roleDeveloper = Role.builder().roleId("PROJECT_DEVELOPER").scope("g").build();
@@ -162,12 +216,12 @@ public class ProjectTest extends BaseApiTest {
         var user = testData.getUser();
         user.setRoles(roles);
         superUserCheckedRequests.getRequest(USERS).create(user);
-        var userUncheckedRequests = new UncheckedRequests(Specifications.authSpec(user));
+        var userUncheckedRequests = new UncheckedRequests(Specs.authSpec(user));
 
-        var response = userUncheckedRequests.getRequest(PROJECTS).create(testData.getProject());
-
-        softy.assertEquals(response.statusCode(), HttpStatus.SC_FORBIDDEN);
-        softy.assertTrue(response.body().asString().contains("You do not have \"Create subproject\" permission in project with internal id: _Root"));
+        userUncheckedRequests.getRequest(PROJECTS)
+                .create(testData.getProject())
+                .then()
+                .spec(ValidationResponseSpecs.checkSubprojectCanNotBeCreatedByCertainRoles());
     }
 
 }

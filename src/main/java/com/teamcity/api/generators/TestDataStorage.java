@@ -3,7 +3,7 @@ package com.teamcity.api.generators;
 import com.teamcity.api.enums.Endpoint;
 import com.teamcity.api.models.BaseModel;
 import com.teamcity.api.requests.unchecked.UncheckedBase;
-import com.teamcity.api.spec.Specifications;
+import com.teamcity.api.spec.Specs;
 
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -56,7 +56,7 @@ public class TestDataStorage {
     public void deleteCreatedEntities() {
         createdEntities.forEach(
                 (endpoint, ids) -> ids.forEach(
-                        id -> new UncheckedBase(Specifications.superUserAuth(), endpoint).delete(id)
+                        id -> new UncheckedBase(Specs.superUserAuth(), endpoint).delete(id)
                 )
         );
         createdEntities.clear();
