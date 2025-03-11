@@ -4,7 +4,7 @@ import com.teamcity.api.models.BuildType;
 import com.teamcity.api.models.Project;
 import com.teamcity.api.requests.CheckedRequests;
 import com.teamcity.api.requests.unchecked.UncheckedBase;
-import com.teamcity.api.spec.Specifications;
+import com.teamcity.api.spec.Specs;
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
 import org.testng.annotations.Test;
@@ -21,7 +21,7 @@ public class BuildTypeTest extends BaseApiTest {
     public void userCreatesBuildTypeTest() {
         var user = testData.getUser();
         superUserCheckedRequests.getRequest(USERS).create(user);
-        var userCheckedRequests = new CheckedRequests(Specifications.authSpec(user));
+        var userCheckedRequests = new CheckedRequests(Specs.authSpec(user));
 
         userCheckedRequests.<Project>getRequest(PROJECTS).create(testData.getProject());
 
@@ -35,7 +35,7 @@ public class BuildTypeTest extends BaseApiTest {
     public void userCreatesTwoBuildTypesWithTheSameIdTest() {
         var user = testData.getUser();
         superUserCheckedRequests.getRequest(USERS).create(user);
-        var userCheckedRequests = new CheckedRequests(Specifications.authSpec(user));
+        var userCheckedRequests = new CheckedRequests(Specs.authSpec(user));
 
         var project = testData.getProject();
         userCheckedRequests.<Project>getRequest(PROJECTS).create(project);
@@ -44,7 +44,7 @@ public class BuildTypeTest extends BaseApiTest {
         var buildTypeWithSameId = generate(Arrays.asList(project), BuildType.class, buildType.getId());
 
         userCheckedRequests.getRequest(BUILT_TYPES).create(buildType);
-        new UncheckedBase(Specifications.authSpec(user), BUILT_TYPES)
+        new UncheckedBase(Specs.authSpec(user), BUILT_TYPES)
                 .create(buildTypeWithSameId)
                 .then()
                 .assertThat()

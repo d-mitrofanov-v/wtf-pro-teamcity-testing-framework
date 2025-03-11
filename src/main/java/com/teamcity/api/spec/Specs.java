@@ -8,8 +8,8 @@ import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 
-public class Specifications {
-    private static Specifications spec;
+public class Specs {
+    private static Specs spec;
 
     private static RequestSpecBuilder reqBuilder() {
         RequestSpecBuilder requestBuilder = new RequestSpecBuilder();

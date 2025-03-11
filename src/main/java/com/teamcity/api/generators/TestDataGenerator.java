@@ -44,8 +44,11 @@ public final class TestDataGenerator {
      * параметром generatedModels при генерации BuildType, он будет переиспользоваться при установке
      * поля NewProjectDescription project, вместо генерации нового.
      */
-    public static <T extends BaseModel> T generate(List<BaseModel> generatedModels, Class<T> generatorClass,
-                                                   Object... parameters) {
+    public static <T extends BaseModel> T generate(
+            List<BaseModel> generatedModels,
+            Class<T> generatorClass,
+            Object... parameters
+    ) {
         try {
             var instance = generatorClass.getDeclaredConstructor().newInstance();
             for (var field : generatorClass.getDeclaredFields()) {
