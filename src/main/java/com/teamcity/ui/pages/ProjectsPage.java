@@ -13,10 +13,10 @@ import static com.codeborne.selenide.Selenide.$$;
 
 public class ProjectsPage extends BasePage {
     private static final String PROJECTS_URL = "/favorite/projects";
-    private ElementsCollection projectElements = $$("div[class*='Subproject__container']");
-    private SelenideElement header = $(".MainPanel__router--gF > div");
+    private final ElementsCollection projectElements = $$("div[class*='Subproject__container']");
 
     public ProjectsPage() {
+        SelenideElement header = $(".MainPanel__router--gF > div");
         header.shouldBe(Condition.visible, BASE_WAITING);
     }
 
