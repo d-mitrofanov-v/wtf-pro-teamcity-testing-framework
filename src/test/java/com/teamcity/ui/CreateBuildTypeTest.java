@@ -4,9 +4,11 @@ import com.codeborne.selenide.Condition;
 import com.teamcity.api.enums.Endpoint;
 import com.teamcity.api.models.BuildType;
 import com.teamcity.api.models.Project;
+import com.teamcity.ui.errors.UiErrors;
 import com.teamcity.ui.pages.BuildTypePage;
 import com.teamcity.ui.pages.ProjectPage;
 import com.teamcity.ui.pages.admin.CreateBuildTypePage;
+import com.teamcity.ui.validators.ValidateElement;
 import org.testng.annotations.Test;
 
 import static com.teamcity.api.enums.Endpoint.PROJECTS;
@@ -48,10 +50,10 @@ public class CreateBuildTypeTest extends BaseUiTest {
 
         loginAs(testData.getUser());
 
-        var errorText = CreateBuildTypePage.open(project.getId())
+        var valError = CreateBuildTypePage.open(project.getId())
                 .setupWithoutURL()
-                .getValidationError().text();
+                .getValidationError();
 
-        softy.assertEquals(errorText, "URL must not be empty");
+        ValidateElement.byText(valError, UiErrors.BUILD_CONFIG_URL_MUST_BE_NOT_NULL, softy);
     }
 }
