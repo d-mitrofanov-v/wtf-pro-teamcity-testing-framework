@@ -6,7 +6,6 @@ import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
 
 public class ValidationResponseSpecs {
-
     private static ResponseSpecification buildResponseSpec(int statusCode, String expectedMessage, Object... messageParams) {
         return new ResponseSpecBuilder()
                 .expectStatusCode(statusCode)
