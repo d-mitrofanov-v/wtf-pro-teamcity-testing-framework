@@ -8,6 +8,7 @@ import static com.codeborne.selenide.Selenide.$;
 
 public class CreateBuildTypePage extends CreateBasePage {
     private static final String BUILD_TYPE_SHOW_MODE = "createBuildTypeMenu";
+
     private final SelenideElement validationError = $("#error_url");
 
     public static CreateBuildTypePage open(String projectId) {
@@ -26,12 +27,11 @@ public class CreateBuildTypePage extends CreateBasePage {
 
     public CreateBuildTypePage setupWithoutURL() {
         submitButton.click();
+        validationError.should(Condition.appear, BASE_WAITING);
         return this;
     }
 
     public SelenideElement getValidationError() {
-        validationError.should(Condition.appear, BASE_WAITING);
         return validationError;
     }
-
 }
