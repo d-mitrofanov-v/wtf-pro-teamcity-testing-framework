@@ -1,12 +1,19 @@
 package com.teamcity.api.spec;
 
+import com.github.viclovsky.swagger.coverage.FileSystemOutputWriter;
+import com.github.viclovsky.swagger.coverage.SwaggerCoverageRestAssured;
 import com.teamcity.api.config.Config;
 import com.teamcity.api.models.User;
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+
+import java.nio.file.Paths;
+
+import static com.github.viclovsky.swagger.coverage.SwaggerCoverageConstants.OUTPUT_DIRECTORY;
 
 public class Specs {
     private static Specs spec;
@@ -17,7 +24,13 @@ public class Specs {
                 .setContentType(ContentType.JSON)
                 .setAccept(ContentType.JSON)
                 .addFilter(new RequestLoggingFilter())
-                .addFilter(new ResponseLoggingFilter());
+                .addFilter(new ResponseLoggingFilter())
+                .addFilter(new SwaggerCoverageRestAssured(
+                        new FileSystemOutputWriter(
+                                Paths.get("target/" + OUTPUT_DIRECTORY)
+                        )
+                ))
+                .addFilter(new AllureRestAssured());
         return requestBuilder;
     }
 
