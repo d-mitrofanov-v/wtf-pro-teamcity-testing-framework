@@ -27,3 +27,4 @@ public class ProjectPage extends BasePage {
         return generatePageElements(buildTypeElements, BuildTypeElement::new);
     }
 }
+
